@@ -385,7 +385,7 @@ class LevMarLSQFitter(object):
         if weights is None:
             return np.ravel(model(*args[2 : -1]) - meas)
         else:
-            return np.ravel(weights * (model(*args[1 : -1]) - meas))
+            return np.ravel(weights * (model(*args[2 : -1]) - meas))
 
     def __call__(self, model, x, y, z=None, weights=None,
                  maxiter=DEFAULT_MAXITER, acc=DEFAULT_ACC,
@@ -403,7 +403,7 @@ class LevMarLSQFitter(object):
            input coordinates
         z : array (optional)
            input coordinates
-        weights : array (optional
+        weights : array (optional)
            weights
         maxiter : int
             maximum number of iterations
@@ -714,7 +714,7 @@ class JointFitter(object):
                     plen = slc.stop - slc.start
                     mparams.extend(mfparams[:plen])
                     del mfparams[:plen]
-            modelfit = model.eval(margs[:-1], *mparams)
+            modelfit = model.evaluate(margs[:-1], *mparams)
             fitted.extend(modelfit - margs[-1])
         return np.ravel(fitted)
 

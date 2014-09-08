@@ -273,6 +273,32 @@ class TestNonLinearFitters(object):
                                   args=(self.xdata, self.ydata))
         assert_allclose(model.parameters, result[0], rtol=10 ** (-3))
 
+    def test_with_weights(self):
+        """
+        Tests results from `LevMarLSQFitter` with weights.
+        """
+        # part 1: weights are equal to 1
+        fitter = LevMarLSQFitter()
+        model = fitter(self.gauss, self.xdata, self.ydata,
+                       estimate_jacobian=True)
+        withw = fitter(self.gauss, self.xdata, self.ydata,
+                       estimate_jacobian=True, weights=np.ones_like(self.xdata))
+
+        assert_allclose(model.parameters, withw.parameters, rtol=10 ** (-4))
+
+        # part 2: weights are 0 or 1 (effectively, they are a mask)
+        weights = np.zeros_like(self.xdata)
+        weights[::2] = 1.
+        mask = weights >= 1.
+
+        model = fitter(self.gauss, self.xdata[mask], self.ydata[mask],
+                       estimate_jacobian=True)
+        withw = fitter(self.gauss, self.xdata, self.ydata,
+                       estimate_jacobian=True, weights=weights)
+
+        assert_allclose(model.parameters, withw.parameters, rtol=10 ** (-4))
+
+
     @pytest.mark.parametrize('fitter_class', fitters)
     def test_fitter_against_LevMar(self, fitter_class):
         """Tests results from non-linear fitters against `LevMarLSQFitter`."""
@@ -309,12 +335,13 @@ class TestNonLinearFitters(object):
             b = Parameter()
 
             @staticmethod
-            def eval(x, y, a, b):
+            def evaluate(x, y, a, b):
                 return (a - x) ** 2 + b * (y - x ** 2) ** 2
 
         x = y = np.linspace(-3.0, 3.0, 100)
         with NumpyRNGContext(_RANDOM_SEED):
-            z = Rosenbrock.eval(x, y, 1.0, 100.0) + np.random.normal(0., 0.1)
+            z = Rosenbrock.evaluate(x, y, 1.0, 100.0)
+            z += np.random.normal(0., 0.1, size=z.shape)
 
         fitter = SimplexLSQFitter()
         r_i = Rosenbrock(1, 100)
